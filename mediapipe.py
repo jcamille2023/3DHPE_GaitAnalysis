@@ -26,9 +26,9 @@ def main():
                 break
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             fps = cap.get(cv2.CAP_PROP_FPS)
-            timestamp = mp.Timestamp(seconds=i/fps)
+            print(int(i/fps))
             mp_image = get_mp_image(frame)
-            results = landmarker.detect_for_video(mp_image,timestamp)
+            results = landmarker.detect_for_video(mp_image,int(i/fps)+i)
             print(results)
             cv2.imshow('MediaPipe Pose', frame)
             if cv2.waitKey(5) & 0xFF == 27:
