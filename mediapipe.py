@@ -1,38 +1,40 @@
 import mediapipe as mp
-#from mediapipe.tasks import python
-#from mediapipe.tasks import vision
-import tkinter as tk
-from tkinter import filedialog
+import cv2
+model_path = "C:/Users/jcamille2023/learningAI/pythonProject/pose_landmarker_full.task"
 
-class MainWindow:
-    def __init__():
-        win = tk.Tk()
-        win.title("Pose estimation model")
-        labels = []
-        
-        labels.append(tk.Label(win,text="Enter the path to the video dataset..."))
-        labels[0].pack()
-        
-        inputs = []
-        inputs.append(tk.Entry(win))
-        inputs[0].pack()
+# Use OpenCV’s VideoCapture to load the input video.
 
-        buttons = []
-        buttons.append(tk.Button(text="Search",command=lambda: folder_search(inputs[0])))
-        buttons[0].pack()
-        
-        buttons.append(tk.Button(win,text="Train model"))
-        return win
-
-
-
+def get_mp_image(arr):
+    return mp.Image(
+        image_format=mp.ImageFormat.SRGB,
+        data = arr
+    )
 def main():
-    win = MainWindow()
-    win.mainloop()
+    video_path = "C:/Users/jcamille2023/learningAI/pythonProject/videoplayback.mp4"
+    base_options = mp.tasks.BaseOptions(model_asset_path=model_path)
+    options = mp.tasks.vision.PoseLandmarkerOptions(
+        base_options=base_options,
+        running_mode=mp.tasks.vision.RunningMode.VIDEO
+    )
+    with mp.tasks.vision.PoseLandmarker.create_from_options(options) as landmarker:
+        i = 0
+        landmarker = landmarker
+        cap = cv2.VideoCapture(video_path)
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            timestamp = mp.Timestamp(seconds=i/fps)
+            mp_image = get_mp_image(frame)
+            results = landmarker.detect_for_video(mp_image,timestamp)
+            print(results)
+            cv2.imshow('MediaPipe Pose', frame)
+            if cv2.waitKey(5) & 0xFF == 27:
+                break
+            i += 1
+
 
     return 0
-
-def folder_search(entry):
-    entry.delete(0,'end')
-    entry.insert(0,filedialog.askdirectory())
 main()
