@@ -13,11 +13,12 @@ model_path = "C:/Users/Jossaya/PycharmProjects/learningAI/CV/src/pose_landmarker
 def save_to_spreadsheet(arr,filename):
     wb = Workbook()
     s = wb.active
-    s.append(["frame","joint","x","y","z"])
+    s.append(["timestamp","joint","x","y","z"])
     for idx, i in enumerate(arr):
         landmarks = i.pose_landmarks[0]
+        tsp = i.timestamp
         for tdx, t in enumerate(landmarks):
-            s.append([idx,tdx,t.x,t.y,t.z])
+            s.append([tsp,tdx,t.x,t.y,t.z])
     wb.save(filename)
     print("Saved to ", filename, "!")
 def get_mp_image(arr):
@@ -45,6 +46,8 @@ def draw_landmarks_on_image(rgb_image, detection_result):
       solutions.pose.POSE_CONNECTIONS,
       solutions.drawing_styles.get_default_pose_landmarks_style())
   return annotated_image
+
+# my code
 def main():
     video_path = "C:/Users/Jossaya/PycharmProjects/learningAI/CV/videoplayback.mp4"
     base_options = mp.tasks.BaseOptions(model_asset_path=model_path)
@@ -62,10 +65,14 @@ def main():
             ret, frame = cap.read()
             if not ret:
                 break
-            #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            # get frames/sec
             fps = cap.get(cv2.CAP_PROP_FPS)
+            # convert frame to mediapipe image class
             mp_image = get_mp_image(frame)
+            # detect landmarks then add results to list for each frame
             pose_landmarks_frames.append(landmarker.detect_for_video(mp_image,int((i/fps)*1e6)))
+            pose_landmarks_frames[i].timestamp = i/fps
+            # show each frame with predicted pose landmarks
             cv2.imshow('MediaPipe Pose', draw_landmarks_on_image(frame,pose_landmarks_frames[i]))
             if cv2.waitKey(5) & 0xFF == 27:
                 break
