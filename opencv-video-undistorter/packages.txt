@@ -1,0 +1,6 @@
+freeglut3-dev
+libgtk2.0-dev
+libgl1-mesa-glx
+libffi-dev 
+libheif-dev 
+libde265-dev
