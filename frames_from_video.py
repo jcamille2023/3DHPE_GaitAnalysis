@@ -5,7 +5,7 @@ import sys
 video_path = sys.argv[0]
 
 # Create a folder to store frames if it doesn't exist
-output_folder = "C:/Users/jcamille2023/PycharmProjects/GhoraaniLab/Mediapipe/frames"
+output_folder = "C:/Users/pc/PycharmProjects/learningAI/frames"
 os.makedirs(output_folder, exist_ok=True)
 
 # Open the video file

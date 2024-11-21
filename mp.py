@@ -1,7 +1,5 @@
+import os
 from fileinput import filename
-
-model_path = "C:/Users/jcamille2023/PycharmProjects/GhoraaniLab/Mediapipe/pose_landmarker_full.task"
-
 import mediapipe as mp
 import cv2
 from openpyxl import Workbook
@@ -10,21 +8,40 @@ from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 import numpy as np
 import sys
+
+model_path = os.path.join(os.getcwd(),"pose_landmarker_full.task")
 video_path = sys.argv[1]
 filename = sys.argv[2]
+distance = 3
 
 
-def save_to_spreadsheet(arr):
+def save_to_spreadsheet(arr,length):
+    print("Length: ", length)
     wb = Workbook()
     s = wb.active
+    shoulder_width = float(input("Enter the measured width of the shoulder: "))
+    person_height = float(input("Enter the measured height of the person: "))
     s.append(["timestamp","joint","x","y","z"])
     for idx, i in enumerate(arr):
         if len(i.pose_landmarks) == 0:
             continue
         landmarks = i.pose_world_landmarks[0]
+        # mediapipe shoulder width
+        mp_sh = (landmarks[11].y - landmarks[12].y)
+        #mediapipe height
+        mp_hg = (landmarks[0].y - ((landmarks[30].y + landmarks[31].y)/2))
+
+        x_scale = shoulder_width / mp_hg
+        y_scale = person_height / mp_sh
+        speed = distance / length
         tsp = i.timestamp
         for tdx, t in enumerate(landmarks):
-            s.append([tsp,tdx,t.x,t.y,t.z])
+            arr = [tsp, # timestamp
+                   tdx, # joint number
+                   t.x*x_scale, # scaled x coord
+                   t.y*y_scale, # scaled y coord
+                   distance - speed*tsp + (t.z),] # absolute z coord
+            s.append(arr)
     wb.save(filename)
     print("Saved to ", filename, "!")
 def get_mp_image(arr):
@@ -54,6 +71,7 @@ def draw_landmarks_on_image(rgb_image, detection_result):
   return annotated_image
 
 # my code
+fps = 0
 def main():
     base_options = mp.tasks.BaseOptions(model_asset_path=model_path)
     options = mp.tasks.vision.PoseLandmarkerOptions(
@@ -63,6 +81,7 @@ def main():
     pose_landmarks_frames = []
     with mp.tasks.vision.PoseLandmarker.create_from_options(options) as landmarker:
         i = 0
+
         landmarker = landmarker
         # Use OpenCV’s VideoCapture to load the input video.
         cap = cv2.VideoCapture(video_path)
@@ -83,6 +102,7 @@ def main():
                 break
             i += 1
     print("Saving data to spreadsheet...")
-    save_to_spreadsheet(pose_landmarks_frames)
+    length = fps/i
+    save_to_spreadsheet(pose_landmarks_frames,length)
     return 0
 main()

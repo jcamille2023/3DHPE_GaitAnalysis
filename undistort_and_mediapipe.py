@@ -4,11 +4,10 @@ import os
 import sys
 import subprocess
 import importlib.util
-
-folder_path = "C:/Users/jcamille2023\\PycharmProjects\\GhoraaniLab\\Mediapipe\\opencv-video-undistorter\\"
+folder_path = os.path.join(os.getcwd(),"/opencv-video-undistorter")
 print(sys.path.append(folder_path))
 checkerboard_path = input("Paste ABSOLUTE path to checkerboard video.\n")
-videos_path = input("Paste ABSOLUTE path to gait videos.\n")
+videos_path = input("Paste ABSOLUTE path to gait videos.\n") + "\\"
 checkerboard_corner_x = int(input("Enter number of checkerboard corners on x axis.\n"))
 checkerboard_corner_y = int(input("Enter number of checkerboard corners on y axis.\n"))
 
@@ -16,7 +15,7 @@ checkerboard_corner_y = int(input("Enter number of checkerboard corners on y axi
 # Path to the video file
 
 # Create a folder to store frames if it doesn't exist
-output_folder = "C:/Users/jcamille2023/PycharmProjects/GhoraaniLab/Mediapipe/frames"
+output_folder = folder_path = os.path.join(os.getcwd(),"frames")
 os.makedirs(output_folder, exist_ok=True)
 
 os.makedirs(output_folder, exist_ok=True)
@@ -59,18 +58,26 @@ i = 0
 for video in os.listdir(videos_path):
     i += 1
     print("video " + str(i) + ": " + video)
+    print(os.path.join(os.getcwd(),"opencv-video-undistorter/extractandcalib.py"))
     if i == 1:
-        subprocess.run(["C:/Users/jcamille2023/PycharmProjects/GhoraaniLab/Mediapipe/venv/Scripts/python.exe","C:/Users/jcamille2023/PycharmProjects/GhoraaniLab/Mediapipe/opencv-video-undistorter/extractandcalib.py","--all",output_folder+"\*",str(checkerboard_corner_x),str(checkerboard_corner_y),os.path.join(output_folder,"../undistorted_frames"), os.path.join(videos_path, video), "undistorted_" + str(i), "False"])
+        subprocess.run(["python",
+                        os.path.join(os.getcwd(),"opencv-video-undistorter/extractandcalib.py"),
+                        "--all",output_folder+"\\*",
+                        str(checkerboard_corner_x),
+                        str(checkerboard_corner_y),
+                        os.path.join(output_folder+"\\","..\\undistorted_frames"),
+                        os.path.join(videos_path, video), "undistorted_" + str(i), "False"])
         print("Calibration complete.")
     else:
-        subprocess.run(["C:/Users/jcamille2023/PycharmProjects/GhoraaniLab/Mediapipe/venv/Scripts/python.exe",
-                        "C:/Users/jcamille2023/PycharmProjects/GhoraaniLab/Mediapipe/opencv-video-undistorter/extractandcalib.py",
+        print(os.getcwd())
+        subprocess.run(["./venv/Scripts/python.exe",
+                        os.getcwd() + "\\opencv-video-undistorter\\extractandcalib.py",
                         "--videoprocessing",
-                        os.path.join(videos_path, video),
-                        os.path.join(output_folder, "../undistorted_frames"),
+                        videos_path + video,
+                        os.path.join(output_folder+"\\","..\\undistorted_frames"),
                         "undistorted_" + str(i),
-                        "False"
-                        ])
+                        "False"]
+                       )
 i = 0
 print("Running mediapipe...")
 arr = os.listdir(os.path.join(videos_path,"../../undistorted_frames/"))
