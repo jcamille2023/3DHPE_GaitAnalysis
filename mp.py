@@ -19,28 +19,22 @@ def save_to_spreadsheet(arr,length):
     print("Length: ", length)
     wb = Workbook()
     s = wb.active
-    shoulder_width = float(input("Enter the measured width of the shoulder: "))
-    person_height = float(input("Enter the measured height of the person: "))
+    speed = float(input("Enter the speed of this person in meters/second (negative for approaching, positive for facing away from camera)"))
     s.append(["timestamp","joint","x","y","z"])
+    i_tsp =  arr[0].timestamp
     for idx, i in enumerate(arr):
         if len(i.pose_landmarks) == 0:
             continue
         landmarks = i.pose_world_landmarks[0]
-        # mediapipe shoulder width
-        mp_sh = (landmarks[11].y - landmarks[12].y)
-        #mediapipe height
-        mp_hg = (landmarks[0].y - ((landmarks[30].y + landmarks[31].y)/2))
 
-        x_scale = shoulder_width / mp_hg
-        y_scale = person_height / mp_sh
-        speed = distance / length
         tsp = i.timestamp
         for tdx, t in enumerate(landmarks):
+            print(t.z)
             arr = [tsp, # timestamp
                    tdx, # joint number
-                   t.x*x_scale, # scaled x coord
-                   t.y*y_scale, # scaled y coord
-                   distance - speed*tsp + (t.z),] # absolute z coord
+                   t.x, # scaled x coord
+                   t.y, # scaled y coord
+                   distance - speed*(tsp - i_tsp) + (t.z)] # absolute z coord
             s.append(arr)
     wb.save(filename)
     print("Saved to ", filename, "!")
