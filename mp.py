@@ -19,8 +19,13 @@ def save_to_spreadsheet(arr,length):
     print("Length: ", length)
     wb = Workbook()
     s = wb.active
-    speed = float(input("Enter the speed of this person in meters/second (negative for approaching, positive for facing away from camera)"))
+    distance = float(input("Enter the distance of this person in meters/second (negative for approaching, positive for facing away from camera)"))
     s.append(["timestamp","joint","x","y","z"])
+    if distance > 0:
+        dist = 0
+    else:
+        dist = -distance
+    speed = distance / length
     i_tsp =  arr[0].timestamp
     for idx, i in enumerate(arr):
         if len(i.pose_landmarks) == 0:
@@ -34,7 +39,7 @@ def save_to_spreadsheet(arr,length):
                    tdx, # joint number
                    t.x, # scaled x coord
                    t.y, # scaled y coord
-                   distance - speed*(tsp - i_tsp) + (t.z)] # absolute z coord
+                   dist + speed*(tsp - i_tsp) + (t.z) + 1] # absolute z coord
             s.append(arr)
     wb.save(filename)
     print("Saved to ", filename, "!")
@@ -85,6 +90,8 @@ def main():
                 break
             # get frames/sec
             fps = cap.get(cv2.CAP_PROP_FPS)
+            # get frame count
+            frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
             # convert frame to mediapipe image class
             mp_image = get_mp_image(frame)
             # detect landmarks then add results to list for each frame
@@ -96,7 +103,7 @@ def main():
                 break
             i += 1
     print("Saving data to spreadsheet...")
-    length = fps/i
+    length = frame_count / fps
     save_to_spreadsheet(pose_landmarks_frames,length)
     return 0
 main()
