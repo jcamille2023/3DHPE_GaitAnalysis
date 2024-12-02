@@ -4,6 +4,7 @@ import os
 import sys
 import subprocess
 import importlib.util
+import numpy as np
 folder_path = os.path.join(os.getcwd(),"/opencv-video-undistorter")
 print(sys.path.append(folder_path))
 checkerboard_path = input("Paste ABSOLUTE path to checkerboard video.\n")
@@ -65,7 +66,7 @@ for video in os.listdir(videos_path):
                         "--all",output_folder+"\\*",
                         str(checkerboard_corner_x),
                         str(checkerboard_corner_y),
-                        os.path.join(output_folder+"\\","..\\undistorted_frames"),
+                        os.path.join(output_folder+"\\","..\\undistorted_frames\\"),
                         os.path.join(videos_path, video), "undistorted_" + str(i), "False"])
         print("Calibration complete.")
     else:
@@ -79,11 +80,16 @@ for video in os.listdir(videos_path):
                         "False"]
                        )
 i = 0
+print("Getting focal lengths...")
+matrix = np.loadtxt("./undistorted_frames/mtx.txt")
+f_x = matrix[0,0]
+f_y = matrix[1,1]
+print("f_x", f_x, "f_y", f_y)
 print("Running mediapipe...")
 arr = os.listdir(os.path.join(videos_path,"../../undistorted_frames/"))
 videos = [file for file in arr if not file.endswith(".txt")]
 for video in videos:
     print("video " + str(i+1) + ": " + video)
-    subprocess.run(["./venv/Scripts/python.exe","./mp.py",os.path.join(os.path.join(videos_path,"../../undistorted_frames/"), video), "undistorted_" + str(i) + ".xlsx"]);
+    subprocess.run(["./venv/Scripts/python.exe","./mp.py",os.path.join(os.path.join(videos_path,"../../undistorted_frames/"), video), "undistorted_" + str(i) + ".xlsx",str(f_x),str(f_y)]);
     i += 1
-print("Scaling up values")
+print("Gait data complete!")

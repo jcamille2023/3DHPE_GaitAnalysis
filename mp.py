@@ -8,14 +8,16 @@ from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 import numpy as np
 import sys
-
+from fractions import Fraction
 model_path = os.path.join(os.getcwd(),"pose_landmarker_full.task")
 video_path = sys.argv[1]
 filename = sys.argv[2]
+f_x = float(sys.argv[3])
+f_y = float(sys.argv[4])
 distance = 3
 
 
-def save_to_spreadsheet(arr,length):
+def save_to_spreadsheet(arr,length,img_height,img_width):
     print("Length: ", length)
     wb = Workbook()
     s = wb.active
@@ -27,20 +29,51 @@ def save_to_spreadsheet(arr,length):
         dist = -distance
     speed = distance / length
     i_tsp =  arr[0].timestamp
+    # get image center
+    center = (img_width/2, img_height/2)
+    # image aspect ratio
+    asp_rat = Fraction(img_width,img_height)
+    # calculate sensor diagonal -- FOR IPHONE 11 -- units in mm
+    s_diag = (1/2.55) * 25.4
+    # image diagonal
+    i_diag = np.sqrt(asp_rat.numerator**2 + asp_rat.denominator**2)
+    # calculating sensor scale factor
+    ss_fac = s_diag / i_diag
+    # calculating sensor width and height
+    s_width = ss_fac*asp_rat.numerator
+    s_height = ss_fac*asp_rat.denominator
+    # calculating coord scale factor for width and height
+    sc_fac_w = s_width / img_width
+    sc_fac_h = s_height / img_height
+
     for idx, i in enumerate(arr):
         if len(i.pose_landmarks) == 0:
             continue
-        landmarks = i.pose_world_landmarks[0]
-
+        landmarks = i.pose_landmarks[0]
+        world_landmarks = i.pose_world_landmarks[0]
         tsp = i.timestamp
         for tdx, t in enumerate(landmarks):
-            print(t.z)
-            arr = [tsp, # timestamp
+            # calculate joint positions in pixels
+            pixel_x = center[0] - t.x*img_width
+            pixel_y = center[1] - t.y*img_height
+            # calculate estimated depth by using avg velocity and distance
+            est_z = dist + speed*(tsp - i_tsp)
+            # calculate joint depth for this joint
+            joint_z = est_z + (world_landmarks[tdx].z) + 1
+            # calculate pixel depth for each joint for x and y axis
+            pixel_depth_x = f_x * joint_z*1000 / s_width
+            pixel_depth_y = f_y * joint_z*1000 / s_height
+            # calculating absolute x and y coords (relative to camera)
+            abs_x = (pixel_x)*pixel_depth_x/f_x
+            abs_y = (pixel_y)*pixel_depth_y/f_y
+            # calculating real x and y coords using scale factor
+            real_x = abs_x * sc_fac_w
+            real_y = abs_y * sc_fac_h
+            s.append([tsp, # timestamp
                    tdx, # joint number
-                   t.x, # scaled x coord
-                   t.y, # scaled y coord
-                   dist + speed*(tsp - i_tsp) + (t.z) + 1] # absolute z coord
-            s.append(arr)
+                   real_x/1000, # scaled x coord
+                   real_y/1000, # scaled y coord
+                   joint_z]) # absolute z coord
     wb.save(filename)
     print("Saved to ", filename, "!")
 def get_mp_image(arr):
@@ -94,6 +127,8 @@ def main():
             frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
             # convert frame to mediapipe image class
             mp_image = get_mp_image(frame)
+            #get image height/width
+            height, width = frame.shape[:2]
             # detect landmarks then add results to list for each frame
             pose_landmarks_frames.append(landmarker.detect_for_video(mp_image,int((i/fps)*1e6)))
             pose_landmarks_frames[i].timestamp = i/fps
@@ -104,6 +139,6 @@ def main():
             i += 1
     print("Saving data to spreadsheet...")
     length = frame_count / fps
-    save_to_spreadsheet(pose_landmarks_frames,length)
+    save_to_spreadsheet(pose_landmarks_frames,length, height, width)
     return 0
 main()
