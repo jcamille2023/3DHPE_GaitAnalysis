@@ -7,6 +7,8 @@ from checkerboard import video_split
 from datetime import datetime
 from calibration import calibrate
 from undistort import videoprocessing
+from processing import data_processing
+from gait_measures import gait_measures
 from pose import blazepose
 class VideoWebSocketServer:
     def __init__(self, host='localhost', port=3001):
@@ -15,6 +17,7 @@ class VideoWebSocketServer:
         self.connected_clients = set()
         self.video_upload_dir = 'uploaded_videos'
         self.camera_params = {}
+        
         
         # Create directory for video uploads if it doesn't exist
         if not os.path.exists(self.video_upload_dir):
@@ -114,7 +117,7 @@ class VideoWebSocketServer:
             await self.send_status(websocket, f'Video upload failed: {str(e)}')
             return None
 
-    async def handle_client(self, websocket, path):
+    async def handle_client(self, websocket):
         """
         Main handler for each WebSocket client connection.
         """
@@ -129,9 +132,10 @@ class VideoWebSocketServer:
                 try:
                     # Parse incoming message
                     parsed_message = json.loads(message)
-                    
+                    print("Received message:", parsed_message)
                     # Handle different message types
                     if parsed_message.get('type') == 'gait_video_upload':
+                        print("Received gait video")
                         # Handle video upload
                         video_data = parsed_message.get('video_data')
                         path_length = parsed_message.get('path_length')
@@ -162,7 +166,8 @@ class VideoWebSocketServer:
         server = await websockets.serve(
             self.handle_client, 
             self.host, 
-            self.port
+            self.port,
+            #extra_headers=[("Content-Security-Policy", "connect-src 'self' https://cdn.jsdelivr.net/pyodide/ ws://localhost:3000/")]
         )
         print(f"WebSocket server started on {self.host}:{self.port}")
         
@@ -174,7 +179,7 @@ class VideoWebSocketServer:
 
 def main():
     # Create and start the server
-    server = VideoWebSocketServer(host='localhost', port=8765)
+    server = VideoWebSocketServer(host='localhost', port=3000)
     
     # Run the server
     asyncio.run(server.start_server())
