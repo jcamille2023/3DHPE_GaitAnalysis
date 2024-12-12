@@ -40,7 +40,7 @@ def calibrate(matrix_x, matrix_y, image_dir, output_folder):
     # Arrays to store object points and image points from all the images.
     objpoints = []  # 3d point in real world space
     imgpoints = []  # 2d points in image plane.
-    images = glob.glob(image_dir)
+    images = os.listdir(image_dir)
     if len(images) == 0:
         print("No images found!")
         exit()

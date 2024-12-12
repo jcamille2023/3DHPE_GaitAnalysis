@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Recorder</title>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        #videoElement {
+            width: 100%;
+            max-width: 640px;
+            margin: 20px 0;
+        }
+        .button-group {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Video Recorder</h1>
+        <video id="videoElement" autoplay></video>
+        <div class="button-group">
+            <button id="startBtn">Start Recording</button>
+            <button id="stopBtn" disabled>Stop Recording</button>
+            <button id="downloadBtn" disabled>Download</button>
+        </div>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById('videoElement').srcObject = stream;
+                return stream;
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+            }
+        }
+
+        document.getElementById('startBtn').addEventListener('click', async () => {
+            const stream = await setupCamera();
+            mediaRecorder = new MediaRecorder(stream);
+            
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.start();
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            mediaRecorder.stop();
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('downloadBtn').disabled = false;
+        });
+
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            document.body.appendChild(a);
+            a.style = 'display: none';
+            a.href = url;
+            a.download = 'recorded-video.mp4';
+            a.click();
+            window.URL.revokeObjectURL(url);
+            recordedChunks = [];
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('downloadBtn').disabled = true;
+        });
+    </script>
+</body>
+</html>
