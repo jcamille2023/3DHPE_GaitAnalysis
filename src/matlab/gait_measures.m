@@ -1,8 +1,7 @@
-
 function gait_measures = get_gait_measures(filename)
-    
+
     % Read data
-    data0 = readtable(filename);
+    data0 = readtable('undistorted_3.xlsx');
     
     % Extract X, Y, Z coordinates for left side 
     l_hip_data0 = data0(data0.joint == 23, :);
@@ -100,11 +99,16 @@ function gait_measures = get_gait_measures(filename)
     
     % Calculate timings and durations
     stance_times_r = arrayfun(@(i) abs(min_locs_r(i) - peak_locs_r(i)), 1:length(peak_locs_r)-1);
-    swing_times_r = arrayfun(@(i) abs(peak_locs_r(i+1) - min_locs_r(i)), 1:length(min_locs_r)-1);
+    swing_times_r = arrayfun(@(i) abs(peak_locs_r(i) - min_locs_r(i+1)), 1:length(min_locs_r)-1);
     
     % Calculate step time and double support time
     step_times = arrayfun(@(i) abs(peak_locs_r(i) - peak_locs_l(i)), 1:min(length(peak_locs_r), length(peak_locs_l)));
     double_support_times = arrayfun(@(i) abs(min_locs_l(i) - peak_locs_r(i)), 1:min(length(min_locs_l), length(peak_locs_r)));
+    
+    l_peak_points0 = arrayfun(@(t) l_foot_data0(l_foot_data0.timestamp == t, :), peak_locs_l(peak_locs_l <= l_timestamp0(end)), 'UniformOutput', false)
+    l_peak_points = vertcat(l_peak_points0{:})
+    r_peak_points0 = arrayfun(@(t) r_foot_data0(r_foot_data0.timestamp == t, :), peak_locs_r(peak_locs_r <= r_timestamp0(end)), 'UniformOutput', false)
+    r_peak_points = vertcat(r_peak_points0{:})
     
     % Calculate step length and stride length
     step_lengths = []
@@ -121,24 +125,20 @@ function gait_measures = get_gait_measures(filename)
     end
     
     % Calculate cadence (steps per second)
-    cadence = length(peak_locs_l) / (l_timestamp0(end) - l_timestamp0(1));
+    cadence = length(peak_locs_l) + length (peak_locs_r) / (l_timestamp0(end) - l_timestamp0(1));
     
     % Display results
-    fprintf('Average Stance Time (Left): %.2f s\n', mean(stance_times_l));
-    fprintf('Average Swing Time (Left): %.2f s\n', mean(swing_times_l));
-    fprintf('Average Stance Time (Right): %.2f s\n', mean(stance_times_r));
-    fprintf('Average Swing Time (Right): %.2f s\n', mean(swing_times_r));
-    fprintf('Average Step Time: %.2f s\n', mean(step_times));
-    fprintf('Average Double Support Time: %.2f s\n', mean(double_support_times));
-    fprintf('Average Step Length: %.2f m\n', mean(step_lengths));
-    fprintf('Average Stride Length (l): %.2f m\n', mean(l_stride_lengths));
-    fprintf('Average Stride Length (r): %.2f m\n', mean(r_stride_lengths));
-    fprintf('Cadence: %.2f steps/s\n', cadence);
-
-    gait_measures = dictionary(["stance_time_l","swing_time_l","stance_time_r", ...
-                                "swing_time_r","step_time","double_support_time", ...
-                                "step_length","stride_length","cadence"], ...
-                                [mean(stance_times_l),mean(swing_times_l),mean(stance_times_r), ...
-                                mean(swing_times_r),mean(step_times),mean(double_support_times), ...
-                                mean(step_lengths),mean(l_stride_lengths,mean(r_stride_lengths))])
+    gait_measures = struct(...
+    'avg_stance_time_left', mean(stance_times_l), ...
+    'avg_swing_time_left', mean(swing_times_l), ...
+    'avg_stance_time_right', mean(stance_times_r), ...
+    'avg_swing_time_right', mean(swing_times_r), ...
+    'avg_step_time', mean(step_times), ...
+    'avg_double_support_time', mean(double_support_times), ...
+    'avg_step_length', mean(step_lengths), ...
+    'avg_stride_length_left', mean(l_stride_lengths), ...
+    'avg_stride_length_right', mean(r_stride_lengths), ...
+    'cadence', cadence ...
+);
+    
 end

@@ -26,7 +26,7 @@ def gait_measures(pose_landmarks,filename):
     data_path = save_joint_data(pose_landmarks,filename)
     print("Extracting gait measures with MATLAB....")
     eng = matlab.engine.start_matlab()
-    eng.addpath(os.path.join(os.getcwd(),"\\src\\matlab\\gait_measures.m"))
+    eng.addpath(os.getcwd()+"\\src\\matlab\\")
     result = dict(eng.feval("gait_measures",data_path))
     return result
 
