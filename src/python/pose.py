@@ -45,6 +45,7 @@ def blazepose(video_path):
         i = 0
         landmarker = landmarker
         # Use OpenCV’s VideoCapture to load the input video.
+        img_arr = []
         cap = cv2.VideoCapture(video_path)
         while True:
             ret, frame = cap.read()
@@ -62,13 +63,27 @@ def blazepose(video_path):
                 "timestamp": i/fps
             })
             # show each frame with predicted pose landmarks
-            cv2.imshow('MediaPipe Pose', draw_landmarks_on_image(frame,pose_landmarks_frames[i]["prediction"]))
+            img = draw_landmarks_on_image(frame,pose_landmarks_frames[i]["prediction"])
+            img_arr.append(img)
+            cv2.imshow('MediaPipe Pose', img)
             if cv2.waitKey(5) & 0xFF == 27:
                 break
             i += 1
-            
+        cap.release()
+    
     print("Mediapipe analysis complete..")
     length = pose_landmarks_frames[-1]["timestamp"]
+    print("Exporting pose annotated video...")
+
+    new_path = video_path[:-3] + "annotated.mp4"
+    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+    out = cv2.VideoWriter(new_path,fourcc,fps,(width,height))
+    for i in range(len(img_arr)):
+        out.write(img_arr[i])
+
+    out.release()
+    cv2.destroyAllWindows()
+    # build data object to return
     data = {"frames":pose_landmarks_frames,
             "length":length,
             "video_height":height,

@@ -15,6 +15,10 @@ def data_processing(pose_landmarks,mtx,path_length):
         new_joint = {}
         if not frame["prediction"]:
             continue
+        elif not frame["prediction"].pose_landmarks:
+            continue
+        elif len(frame["prediction"].pose_landmarks) == 0:
+            continue
         for i, landmark in enumerate(frame["prediction"].pose_landmarks[0]):
             # calculate image center
             center = (pose_landmarks["video_width"]/2, pose_landmarks["video_height"]/2)
